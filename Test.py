@@ -1,8 +1,8 @@
-"""Homework 10
+"""Homework 11
    Student: Keith M. Roseberry
    Class: SSW-810-WS
    Term: Summer, 2018
-   Due Date: 07/29/2018"""
+   Due Date: 08/05/2018"""
 
 import unittest
 from unittest import TestCase
@@ -74,33 +74,23 @@ class TestSystem(TestCase):
 
     def test_repository(self):
         '''Test the Repository class'''
-        repo = Repository()
-        self.assertEqual(repo._instructors, {})
-        self.assertEqual(repo._students, {})
-        repo.load_students("test\\students.txt")
+        repo = Repository(".\\test")
         self.assertEqual(repo._students['10103']._name,'Baldwin, C')
         self.assertEqual(repo._students['10103']._major, 'SFEN')
-        self.assertEqual(repo._students['10103']._grades, {})
         self.assertEqual(repo._students['10115']._name, 'Wyatt, X')
-        self.assertEqual(repo._students['10115']._major, 'CFEN')
-        self.assertEqual(repo._students['10115']._grades, {})
-        repo.load_instructors("test\\instructors.txt")
+        self.assertEqual(repo._students['10115']._major, 'SFEN')
         self.assertEqual(repo._instructors['98765']._name, "Einstein, A")
         self.assertEqual(repo._instructors['98765']._department, "SFEN")
-        self.assertEqual(repo._instructors['98765']._courses, {})
         self.assertEqual(repo._instructors['98764']._name, "Feynman, R")
         self.assertEqual(repo._instructors['98764']._department, "SFEN")
-        self.assertEqual(repo._instructors['98764']._courses, {})
-        repo.load_grades("test\\grades.txt")
-        self.assertEqual(repo._students['10103']._grades, {'SSW 555':'A-', 'SSW 567':'A'})
-        self.assertEqual(repo._students['10115']._grades, {'CPE 555':'A', 'SSW 567':'A'})
-        self.assertEqual(repo._instructors['98765']._courses, {'SSW 567':2})
-        self.assertEqual(repo._instructors['98764']._courses, {'CPE 555':1, 'SSW 555':1})
-        repo.load_majors("test\\majors.txt")
-        self.assertEqual(repo._majors['SFEN']._required, set(['SSW 540','SSW 564']))
-        self.assertEqual(repo._majors['SFEN']._electives, set(['CS 501','CS 545', 'SSW 567']))
-        self.assertEqual(repo._students['10103']._remaining_required, set(['SSW 540','SSW 564']))
-        self.assertEqual(repo._students['10103']._remaining_electives, set(['CS 501','CS 545']))
+        self.assertEqual(repo._students['10103']._grades, {'SSW 564':'A-', 'SSW 567':'A', 'SSW 687':'B'})
+        self.assertEqual(repo._students['10115']._grades, {'SSW 564':'B+', 'SSW 567':'A', 'SSW 687':'A'})
+        self.assertEqual(repo._instructors['98765']._courses, {'SSW 540':3, 'SSW 567':4})
+        self.assertEqual(repo._instructors['98764']._courses, {'SSW 564':3, 'SSW 687':3})
+        self.assertEqual(repo._majors['SFEN']._required, set(['SSW 540','SSW 555','SSW 564','SSW 567']))
+        self.assertEqual(repo._majors['SFEN']._electives, set(['SSW 533','SSW 565','SSW 690','SSW 695']))
+        self.assertEqual(repo._students['10103']._remaining_required, set(['SSW 540','SSW 555']))
+        self.assertEqual(repo._students['10103']._remaining_electives, set(['SSW 533','SSW 565','SSW 690','SSW 695']))
 
 if __name__ == '__main__':
     unittest.main(exit=False, verbosity=2)

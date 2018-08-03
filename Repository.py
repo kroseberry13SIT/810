@@ -1,8 +1,8 @@
-"""Homework 10
+"""Homework 11
    Student: Keith M. Roseberry
    Class: SSW-810-WS
    Term: Summer, 2018
-   Due Date: 07/29/2018"""
+   Due Date: 08/05/2018"""
 
 # ----------
 # Repository Class: Storage of all data for the Course Tracker System
@@ -10,31 +10,17 @@
 
 import os
 import sys
+import sqlite3
 
 from Student import Student
 from Instructor import Instructor
 from Major import Major
 from prettytable import PrettyTable
 
-def line_values(path, num_fields, separator=",", header=False):
-    '''Generator to yield the values in the next line of text in a file as a list'''
-    try:
-        fp = open(path,"r")
-    except:
-        raise FileNotFoundError
-    else:
-        with fp:
-            for line_counter, line in enumerate(fp):
-                if line_counter == 0 and header:
-                    continue
-                vals = line.rstrip().split(separator)
-                if len(vals) != num_fields:
-                    raise ValueError("'{}' has {} fields on line {} but expected {}".format( \
-                        path,len(vals),line_counter,num_fields))
-                yield vals
-                
 class Repository:
-    '''Encapsulates the data needed and managed by the Course Tracker System'''
+    '''Encapsulates the data needed and managed by the Course Tracker System.
+       Will utilize the Repository.db database file in the specified path
+       or the current working directory.'''
 
     def __init__(self, path=""):
         '''Initialize an empty repository'''
@@ -44,37 +30,47 @@ class Repository:
         if path != "":
             self.load_from_path(path)
 
-    def load_students(self, file):
-        '''Load the students data from the specified file.'''
+    def load_students(self):
+        '''Load the students data from the database.'''
         try:
-            for id, name, major in line_values(file, 3, "\t"):
+            students = self._db.execute("select CWID, NAME, MAJOR from STUDENTS")
+        except sqlite3.OperationalError:
+            print("Unable to load the students data from the database.")
+        else:
+            for id, name, major in students:
                 self._students[id] = Student(id, name, major)
-        except FileNotFoundError:
-            print("Error: Students file {} was not found.".format(file))
 
-    def load_instructors(self, file):
-        '''Load the instructors data from the specified file.'''
+    def load_instructors(self):
+        '''Load the instructors data from the database.'''
         try:
-            for id, name, dept in line_values(file, 3, "\t"):
+            instructors = self._db.execute("select CWID, NAME, DEPT from INSTRUCTORS")
+        except sqlite3.OperationalError:
+            print("Unable to load the instructors data from the database.")
+        else:
+            for id, name, dept in instructors:
                 self._instructors[id] = Instructor(id, name, dept)
-        except FileNotFoundError:
-            print("Error: Instructors file {} was not found.".format(file))
 
-    def load_grades(self, file):
-        '''Load the grades data from the specified file and process them.'''
+    def load_grades(self):
+        '''Load the grades data from the database and process them.'''
         try:
-            for s_id, course, grade, i_id in line_values(file, 4, "\t"):
+            grades = self._db.execute("select STUDENT_CWID, COURSE, GRADE, INSTRUCTOR_CWID from GRADES")
+        except sqlite3.OperationalError:
+            print("Unable to load the grades data from the database.")
+        else:
+            for s_id, course, grade, i_id in grades:
                 if s_id in self._students.keys():
                     self._students[s_id].add_grade(course, grade)
                 if i_id in self._instructors.keys():
                     self._instructors[i_id].increment_student_count(course)
-        except FileNotFoundError:
-            print("Error: Grades file {} was not found.".format(file))
 
-    def load_majors(self, file):
+    def load_majors(self):
         '''Load the major definitions (required and elective courses) and process them.'''
         try:
-            for major, course_type, course in line_values(file, 3, "\t"):
+            majors = self._db.execute("select MAJOR, COURSE_TYPE, COURSE from MAJORS")
+        except sqlite3.OperationalError:
+            print("Unable to load the majors data from the database.")
+        else:
+            for major, course_type, course in majors:
                 for s in self._students.keys():
                     if course_type == 'R' and self._students[s]._major == major:
                         self._students[s].add_required_course(course)
@@ -83,15 +79,15 @@ class Repository:
                 if major not in self._majors.keys():
                     self._majors[major] = Major(major)
                 self._majors[major].add_course(course, course_type)
-        except FileNotFoundError:
-            print("Error: Majors file {} was not found.".format(file))
 
     def load_from_path(self, path):
-        '''Read the data files from the specified path into the objects/structures'''
-        self.load_students(os.path.join(path, "students.txt"))
-        self.load_instructors(os.path.join(path, "instructors.txt"))
-        self.load_grades(os.path.join(path, "grades.txt"))
-        self.load_majors(os.path.join(path, "majors.txt"))
+        '''Read the data from the database in the specified path into the objects/structures'''
+        db_path = os.path.join(path,"repository.db")
+        self._db = sqlite3.connect(db_path)
+        self.load_students()
+        self.load_instructors()
+        self.load_grades()
+        self.load_majors()
 
     def print_students(self):
         pt = PrettyTable(field_names=['CWID','Name','Major','Completed Courses','Remaining Required','Remaining Electives'])
@@ -117,7 +113,7 @@ def validate_arguments():
     if len(sys.argv) > 2:
         # Invalid syntax - provide correct syntax and exit.
         print("Invalid syntax.")
-        print("python Repository.py [path to data files]")
+        print("python Repository.py [path to database excluding database file name]")
         quit()
 
     # Default to current working directory unless the user provides another directory.

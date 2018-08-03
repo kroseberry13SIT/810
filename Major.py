@@ -1,8 +1,8 @@
-"""Homework 10
+"""Homework 11
    Student: Keith M. Roseberry
    Class: SSW-810-WS
    Term: Summer, 2018
-   Due Date: 07/29/2018"""
+   Due Date: 08/05/2018"""
 
 # ----------
 # Major Class: Represents a major of study at a college/university
