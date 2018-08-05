@@ -1,8 +1,8 @@
-"""Homework 11
+"""Homework 12
    Student: Keith M. Roseberry
    Class: SSW-810-WS
    Term: Summer, 2018
-   Due Date: 08/05/2018"""
+   Due Date: 08/12/2018"""
 
 # ----------
 # Repository Class: Storage of all data for the Course Tracker System
@@ -16,6 +16,9 @@ from Student import Student
 from Instructor import Instructor
 from Major import Major
 from prettytable import PrettyTable
+from flask import Flask, render_template
+
+app = Flask(__name__)
 
 class Repository:
     '''Encapsulates the data needed and managed by the Course Tracker System.
@@ -107,6 +110,39 @@ class Repository:
         for m in self._majors.keys():
             pt.add_row(self._majors[m].prettyprint())
         return pt
+        
+    def load_instructors_detail(self):
+        '''Return the instructors listing with the course count for each instructor.'''
+        sql = '''select I.CWID, I.NAME, I.DEPT, G.COURSE, count(G.STUDENT_CWID) as 'STUDENTS'
+                 from INSTRUCTORS I join GRADES G on I.CWID=G.INSTRUCTOR_CWID
+                 group by G.COURSE order by I.NAME asc, G.COURSE asc'''
+        try:
+            instructors = self._db.execute(sql)
+        except sqlite3.OperationalError:
+            print("Unable to build the instructors detail data from the database.")
+        else:
+            return [{'cwid':id, 'name':name, 'dept':dept, 'course':course, 'students':students} \
+                    for id, name, dept, course, students in instructors]
+                    
+    def close(self):
+        '''Close the connection to the database.'''
+        self._db.close()
+        
+@app.route("/")
+def hello():
+    '''Test to ensure that Flask is running and bound to the code correctly.'''
+    return "Hello, world! This is Flask!"
+    
+@app.route("/instructors")
+def render_instructors():
+    '''Render the detailed instructors table response.'''
+    repo = Repository(os.getcwd())
+    data = render_template("Instructors.html", \
+                           title="Instructors Detail", \
+                           table_title="Instructors Detail", \
+                           instructors=repo.load_instructors_detail())
+    repo.close()
+    return data
 
 def validate_arguments():
     '''Validate the command line arguments.'''
@@ -124,9 +160,12 @@ def validate_arguments():
 
 if __name__ == '__main__':
     # Load the repository data.
-    repo = Repository(validate_arguments())
+    # repo = Repository(validate_arguments())
 
     # Print the Majors, Students and Instructors in PrettyTables.
-    print(repo.print_majors())
-    print(repo.print_students())
-    print(repo.print_instructors())
+    # print(repo.print_majors())
+    # print(repo.print_students())
+    # print(repo.print_instructors())
+    
+    app.run(debug=True)
+    
